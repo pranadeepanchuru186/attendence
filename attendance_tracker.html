@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendance Tracker - 75% Rule</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+        padding: 40px;
+        animation: slideIn 0.5s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      h1 {
+        color: #333;
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        color: #666;
+        font-size: 0.95em;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        transition: transform 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-label {
+        font-size: 0.9em;
+        opacity: 0.9;
+        margin-bottom: 8px;
+      }
+
+      .stat-value {
+        font-size: 2.5em;
+        font-weight: bold;
+      }
+
+      .attendance-percentage {
+        grid-column: 1 / -1;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+      }
+
+      .percentage-label {
+        font-size: 1em;
+        opacity: 0.9;
+        margin-bottom: 10px;
+      }
+
+      .percentage-value {
+        font-size: 3.5em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .percentage-status {
+        font-size: 1em;
+        font-weight: 600;
+        opacity: 0.95;
+      }
+
+      .rule-section {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        border-left: 5px solid #667eea;
+      }
+
+      .rule-title {
+        color: #333;
+        font-size: 1.2em;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+
+      .rule-content {
+        color: #555;
+        font-size: 0.95em;
+        line-height: 1.6;
+      }
+
+      .rule-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #667eea;
+        margin: 10px 0;
+      }
+
+      .warning {
+        background: #fff3cd;
+        border-left-color: #ffc107;
+      }
+
+      .warning .rule-value {
+        color: #ff6b6b;
+      }
+
+      .success {
+        background: #d4edda;
+        border-left-color: #28a745;
+      }
+
+      .success .rule-value {
+        color: #28a745;
+      }
+
+      .date-picker-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .date-picker-label {
+        font-size: 0.95em;
+        font-weight: 600;
+        margin-bottom: 12px;
+        display: block;
+      }
+
+      .date-picker-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1em;
+        background: white;
+        color: #333;
+        cursor: pointer;
+        margin-bottom: 12px;
+        font-weight: 500;
+      }
+
+      .date-picker-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+      }
+
+      .selected-date-display {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 0.9em;
+        text-align: center;
+        margin-bottom: 12px;
+      }
+
+      .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+
+      .btn {
+        padding: 15px 25px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-present {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      }
+
+      .btn-present:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(17, 153, 142, 0.4);
+      }
+
+      .btn-absent {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+      }
+
+      .btn-absent:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(235, 51, 73, 0.4);
+      }
+
+      .btn:active {
+        transform: translateY(-1px);
+      }
+
+      .history-section {
+        margin-bottom: 30px;
+      }
+
+      .history-title {
+        color: #333;
+        font-size: 1.1em;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+
+      .calendar-container {
+        margin-top: 15px;
+      }
+
+      .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        gap: 10px;
+      }
+
+      .calendar-nav-btn {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+      }
+
+      .calendar-nav-btn:hover {
+        background: #764ba2;
+        transform: translateY(-2px);
+      }
+
+      .calendar-month-title {
+        font-weight: 600;
+        color: #333;
+        flex: 1;
+        text-align: center;
+        font-size: 1.1em;
+      }
+
+      .calendar-grid {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 10px;
+      }
+
+      .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        margin-bottom: 10px;
+      }
+
+      .calendar-weekday {
+        text-align: center;
+        font-weight: 600;
+        color: #667eea;
+        font-size: 0.85em;
+        padding: 8px 4px;
+      }
+
+      .calendar-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+      }
+
+      .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 0.75em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: white;
+        color: #999;
+        position: relative;
+        border: 1px solid #e0e0e0;
+      }
+
+      .calendar-day.other-month {
+        opacity: 0.3;
+      }
+
+      .calendar-day.present {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+      }
+
+      .calendar-day.absent {
+        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        color: white;
+      }
+
+      .calendar-day.today {
+        border: 2px solid #667eea;
+      }
+
+      .calendar-day:not(.other-month):hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .calendar-day-number {
+        font-size: 0.9em;
+      }
+
+      .calendar-day-status {
+        font-size: 1.2em;
+        margin-top: 2px;
+      }
+
+      .calendar-day-delete {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(0, 0, 0, 0.2);
+        border: none;
+        color: white;
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        padding: 0;
+        cursor: pointer;
+        display: none;
+        font-size: 0.7em;
+        line-height: 1;
+      }
+
+      .calendar-day.present:hover .calendar-day-delete,
+      .calendar-day.absent:hover .calendar-day-delete {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .reset-section {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn-reset {
+        flex: 1;
+        padding: 12px 20px;
+        background: #6c757d;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.95em;
+        font-weight: 600;
+        cursor: pointer;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-reset:hover {
+        background: #5a6268;
+        transform: translateY(-3px);
+      }
+
+      .info-box {
+        background: #e7f3ff;
+        border-left: 4px solid #667eea;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+        font-size: 0.9em;
+        color: #333;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 25px;
+        }
+
+        h1 {
+          font-size: 2em;
+        }
+
+        .stat-value {
+          font-size: 2em;
+        }
+
+        .percentage-value {
+          font-size: 2.5em;
+        }
+
+        .rule-value {
+          font-size: 1.5em;
+        }
+
+        .action-buttons {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .no-history {
+        text-align: center;
+        color: #999;
+        font-style: italic;
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>📚 Attendance Tracker</h1>
+        <p class="subtitle">Track your attendance and maintain 75% minimum</p>
+      </header>
+
+      <!-- Statistics Section -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Classes Attended</div>
+          <div class="stat-value" id="attendedClasses">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Classes</div>
+          <div class="stat-value" id="totalClasses">0</div>
+        </div>
+        <div class="attendance-percentage">
+          <div class="percentage-label">Current Attendance</div>
+          <div class="percentage-value" id="attendancePercentage">0%</div>
+          <div class="percentage-status" id="percentageStatus">
+            No classes yet
+          </div>
+        </div>
+      </div>
+
+      <!-- 75% Rule Section -->
+      <div id="ruleSection" class="rule-section success">
+        <div class="rule-title">✅ 75% Rule Status</div>
+        <div class="rule-content" id="ruleContent">
+          Attend your first class to get started!
+        </div>
+      </div>
+
+      <!-- Date Picker Section -->
+      <div class="date-picker-section">
+        <label class="date-picker-label" for="attendanceDate"
+          >📅 Select Date (or use today):</label
+        >
+        <input type="date" id="attendanceDate" class="date-picker-input" />
+        <div class="selected-date-display" id="selectedDateDisplay">Today</div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="btn btn-present" onclick="markPresent()">
+          ✓ Present
+        </button>
+        <button class="btn btn-absent" onclick="markAbsent()">✗ Absent</button>
+      </div>
+
+      <!-- Calendar Section -->
+      <div class="history-section">
+        <div class="history-title">📅 Attendance Calendar</div>
+        <div class="calendar-container">
+          <div class="calendar-header">
+            <button class="calendar-nav-btn" onclick="previousMonth()">
+              ← Prev
+            </button>
+            <div class="calendar-month-title" id="calendarMonthTitle"></div>
+            <button class="calendar-nav-btn" onclick="nextMonth()">
+              Next →
+            </button>
+          </div>
+          <div class="calendar-grid">
+            <div class="calendar-weekdays">
+              <div class="calendar-weekday">Sun</div>
+              <div class="calendar-weekday">Mon</div>
+              <div class="calendar-weekday">Tue</div>
+              <div class="calendar-weekday">Wed</div>
+              <div class="calendar-weekday">Thu</div>
+              <div class="calendar-weekday">Fri</div>
+              <div class="calendar-weekday">Sat</div>
+            </div>
+            <div class="calendar-days" id="calendarDays"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reset Section -->
+      <div class="reset-section">
+        <button class="btn-reset" onclick="resetData()">Reset All Data</button>
+      </div>
+
+      <!-- Info Box -->
+      <div class="info-box">
+        <strong>📌 How it works:</strong><br />
+        • Keep your attendance at or above 75%<br />
+        • If you're above 75%, see how many days you can skip<br />
+        • If you're below 75%, see how many consecutive days needed to
+        recover<br />
+        • Your data is saved automatically in your browser<br />
+        • Click ✕ on any record to delete it
+      </div>
+    </div>
+
+    <script>
+      // Data structure
+      const DATA_KEY = "attendanceTrackerData";
+      const HISTORY_KEY = "attendanceHistory";
+
+      // Initialize or load data from localStorage
+      function initializeData() {
+        let data = JSON.parse(localStorage.getItem(DATA_KEY));
+        if (!data) {
+          data = {
+            attended: 0,
+            total: 0,
+          };
+          saveData(data);
+        }
+        return data;
+      }
+
+      function initializeHistory() {
+        let history = JSON.parse(localStorage.getItem(HISTORY_KEY));
+        if (!history) {
+          history = [];
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        }
+        return history;
+      }
+
+      // Save data to localStorage
+      function saveData(data) {
+        localStorage.setItem(DATA_KEY, JSON.stringify(data));
+      }
+
+      function saveHistory(history) {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      }
+
+      // Get selected date
+      function getSelectedDate() {
+        const dateInput = document.getElementById("attendanceDate");
+        if (dateInput.value) {
+          return new Date(dateInput.value).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+        }
+        return new Date().toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      // Add entry to history
+      function addToHistory(status) {
+        const history = initializeHistory();
+        const selectedDate = getSelectedDate();
+        history.push({
+          status: status,
+          timestamp: selectedDate,
+        });
+        // Keep only last 20 entries
+        if (history.length > 20) {
+          history.shift();
+        }
+        saveHistory(history);
+        updateHistoryDisplay();
+        // Reset date picker to today
+        const today = new Date().toISOString().split("T")[0];
+        document.getElementById("attendanceDate").value = today;
+        updateDateDisplay();
+      }
+
+      // Calculate attendance percentage
+      function calculateAttendancePercentage(attended, total) {
+        if (total === 0) return 0;
+        return ((attended / total) * 100).toFixed(2);
+      }
+
+      // Calculate days to attend to reach 75%
+      function calculateDaysToAttend(attended, total) {
+        if (total === 0) return 0;
+        // Formula: Days needed = ((0.75 * Total) - Attended) / 0.25
+        const daysNeeded = (0.75 * total - attended) / 0.25;
+        return Math.ceil(daysNeeded);
+      }
+
+      // Calculate days that can be skipped
+      function calculateDaysCanSkip(attended, total) {
+        if (total === 0) return 0;
+        // If at exactly 75%, any absence will drop it below
+        // Days can skip = Attended - (0.75 * Total) / 0.25
+        // This is derived from: (Attended - x) / (Total + x) >= 0.75
+        const daysCanSkip = Math.floor(attended / 0.75 - total);
+        return Math.max(0, daysCanSkip);
+      }
+
+      // Update the 75% rule section
+      function updateRuleSection() {
+        const data = initializeData();
+        const ruleSection = document.getElementById("ruleSection");
+        const ruleContent = document.getElementById("ruleContent");
+
+        if (data.total === 0) {
+          ruleSection.className = "rule-section success";
+          ruleContent.innerHTML = "Attend your first class to get started!";
+          return;
+        }
+
+        const percentage = calculateAttendancePercentage(
+          data.attended,
+          data.total,
+        );
+
+        if (percentage >= 75) {
+          // Case 1: Attendance >= 75%
+          const daysCanSkip = calculateDaysCanSkip(data.attended, data.total);
+          ruleSection.className = "rule-section success";
+          ruleContent.innerHTML = `
+                    <strong>Great! Your attendance is above 75%.</strong><br><br>
+                    You can safely skip <span class="rule-value">${daysCanSkip}</span>
+                    day(s) while maintaining exactly 75% attendance.<br><br>
+                    <small>After skipping ${daysCanSkip} day(s), your attendance will be at: ${((data.attended / (data.total + daysCanSkip)) * 100).toFixed(2)}%</small>
+                `;
+        } else {
+          // Case 2: Attendance < 75%
+          const daysNeeded = calculateDaysToAttend(data.attended, data.total);
+          ruleSection.className = "rule-section warning";
+          ruleContent.innerHTML = `
+                    <strong>⚠️ Your attendance is below 75%.</strong><br><br>
+                    You need to attend <span class="rule-value">${daysNeeded}</span>
+                    consecutive day(s) to reach 75% attendance.<br><br>
+                    <small>After attending ${daysNeeded} consecutive day(s), your attendance will be: ${(((data.attended + daysNeeded) / (data.total + daysNeeded)) * 100).toFixed(2)}%</small>
+                `;
+        }
+      }
+
+      // Update display
+      function updateDisplay() {
+        const data = initializeData();
+
+        // Update statistics
+        document.getElementById("attendedClasses").textContent = data.attended;
+        document.getElementById("totalClasses").textContent = data.total;
+
+        // Update percentage
+        const percentage = calculateAttendancePercentage(
+          data.attended,
+          data.total,
+        );
+        document.getElementById("attendancePercentage").textContent =
+          percentage + "%";
+
+        // Update percentage status
+        const statusElement = document.getElementById("percentageStatus");
+        if (data.total === 0) {
+          statusElement.textContent = "No classes yet";
+        } else if (percentage >= 75) {
+          statusElement.textContent = "✅ On Track!";
+          statusElement.style.color = "#28a745";
+        } else {
+          statusElement.textContent = "⚠️ Below Target";
+          statusElement.style.color = "#ff6b6b";
+        }
+
+        updateRuleSection();
+      }
+
+      // Calendar state
+      let currentCalendarDate = new Date();
+
+      // Delete specific history entry
+      function deleteHistoryEntry(index) {
+        if (confirm("Remove this attendance record?")) {
+          const history = initializeHistory();
+          const entry = history[index];
+
+          // Update counts if necessary
+          const data = initializeData();
+          if (entry.status === "present") {
+            data.attended = Math.max(0, data.attended - 1);
+          }
+          data.total = Math.max(0, data.total - 1);
+          saveData(data);
+
+          // Remove from history
+          history.splice(index, 1);
+          saveHistory(history);
+
+          // Update displays
+          updateHistoryDisplay();
+          updateDisplay();
+        }
+      }
+
+      // Get attendance for a specific date
+      function getAttendanceForDate(dateStr) {
+        const history = initializeHistory();
+        const dateObj = new Date(dateStr + "T00:00:00");
+        const dateKey = dateObj.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+
+        for (let entry of history) {
+          if (entry.timestamp === dateKey) {
+            return entry.status;
+          }
+        }
+        return null;
+      }
+
+      // Navigate to previous month
+      function previousMonth() {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar();
+      }
+
+      // Navigate to next month
+      function nextMonth() {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar();
+      }
+
+      // Render calendar
+      function renderCalendar() {
+        const year = currentCalendarDate.getFullYear();
+        const month = currentCalendarDate.getMonth();
+
+        // Update title
+        const monthName = new Date(year, month).toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        });
+        document.getElementById("calendarMonthTitle").textContent = monthName;
+
+        // Get first day of month and number of days
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+        let calendarHTML = "";
+
+        // Previous month's days
+        for (let i = firstDay - 1; i >= 0; i--) {
+          const day = daysInPrevMonth - i;
+          calendarHTML += `<div class="calendar-day other-month"><div class="calendar-day-number">${day}</div></div>`;
+        }
+
+        // Current month's days
+        const today = new Date();
+        const isCurrentMonth =
+          today.getMonth() === month && today.getFullYear() === year;
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const attendance = getAttendanceForDate(dateStr);
+          const isToday = isCurrentMonth && today.getDate() === day;
+
+          let dayClass = "calendar-day";
+          let statusIcon = "";
+
+          if (attendance === "present") {
+            dayClass += " present";
+            statusIcon = "✓";
+          } else if (attendance === "absent") {
+            dayClass += " absent";
+            statusIcon = "✗";
+          }
+
+          if (isToday) {
+            dayClass += " today";
+          }
+
+          const deleteBtn = attendance
+            ? `<button class="calendar-day-delete" onclick="deleteCalendarEntry('${dateStr}')" title="Delete">✕</button>`
+            : "";
+
+          calendarHTML += `
+            <div class="${dayClass}">
+              <div class="calendar-day-number">${day}</div>
+              ${statusIcon ? `<div class="calendar-day-status">${statusIcon}</div>` : ""}
+              ${deleteBtn}
+            </div>
+          `;
+        }
+
+        // Next month's days
+        const totalCells = calendarHTML.split("calendar-day").length - 1;
+        const remainingCells = 42 - totalCells; // 6 rows × 7 days
+        for (let day = 1; day <= remainingCells; day++) {
+          calendarHTML += `<div class="calendar-day other-month"><div class="calendar-day-number">${day}</div></div>`;
+        }
+
+        document.getElementById("calendarDays").innerHTML = calendarHTML;
+      }
+
+      // Delete calendar entry
+      function deleteCalendarEntry(dateStr) {
+        if (confirm("Remove this attendance record?")) {
+          const history = initializeHistory();
+          const dateObj = new Date(dateStr + "T00:00:00");
+          const dateKey = dateObj.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+
+          const index = history.findIndex(
+            (entry) => entry.timestamp === dateKey,
+          );
+          if (index !== -1) {
+            const entry = history[index];
+
+            // Update counts
+            const data = initializeData();
+            if (entry.status === "present") {
+              data.attended = Math.max(0, data.attended - 1);
+            }
+            data.total = Math.max(0, data.total - 1);
+            saveData(data);
+
+            // Remove from history
+            history.splice(index, 1);
+            saveHistory(history);
+
+            // Update displays
+            renderCalendar();
+            updateDisplay();
+          }
+        }
+      }
+
+      // Update history display (now calendar display)
+      function updateHistoryDisplay() {
+        renderCalendar();
+      }
+
+      // Mark present
+      function markPresent() {
+        const data = initializeData();
+        data.attended++;
+        data.total++;
+        saveData(data);
+        addToHistory("present");
+        updateDisplay();
+      }
+
+      // Mark absent
+      function markAbsent() {
+        const data = initializeData();
+        data.total++;
+        saveData(data);
+        addToHistory("absent");
+        updateDisplay();
+      }
+
+      // Reset all data
+      function resetData() {
+        if (
+          confirm(
+            "Are you sure you want to reset all attendance data? This cannot be undone.",
+          )
+        ) {
+          localStorage.removeItem(DATA_KEY);
+          localStorage.removeItem(HISTORY_KEY);
+          updateDisplay();
+          updateHistoryDisplay();
+        }
+      }
+
+      // Update date display
+      function updateDateDisplay() {
+        const dateInput = document.getElementById("attendanceDate");
+        const displayElement = document.getElementById("selectedDateDisplay");
+        if (dateInput.value) {
+          const date = new Date(dateInput.value);
+          displayElement.textContent =
+            "📅 " +
+            date.toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+        } else {
+          displayElement.textContent = "📅 Today";
+        }
+      }
+
+      // Initialize on page load
+      window.addEventListener("DOMContentLoaded", () => {
+        initializeData();
+        initializeHistory();
+        updateDisplay();
+        updateHistoryDisplay();
+        // Set date picker to today
+        const today = new Date().toISOString().split("T")[0];
+        document.getElementById("attendanceDate").value = today;
+        updateDateDisplay();
+        // Add event listener for date changes
+        document
+          .getElementById("attendanceDate")
+          .addEventListener("change", updateDateDisplay);
+      });
+    </script>
+  </body>
+</html>
